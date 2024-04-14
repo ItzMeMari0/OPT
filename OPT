@@ -1,0 +1,481 @@
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Scanner;
+
+// Hoofdklasse voor meldingen
+class Melding {
+    private String type; // Type melding (klacht, vraag, mutatie)
+
+    public Melding(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
+    }
+}
+
+// Subklasse voor klachten
+class Klacht extends Melding {
+    private double ernst; // Ernst van de klacht
+    private String tekst; // Tekst van de klacht
+
+    public Klacht(double ernst, String tekst) {
+        super("klacht");
+        this.ernst = ernst;
+        this.tekst = tekst;
+    }
+
+    public double getErnst() {
+        return ernst;
+    }
+
+    public String getTekst() {
+        return tekst;
+    }
+}
+
+// Subklasse voor vragen
+class Vraag extends Melding {
+    private String vraag; // De gestelde vraag
+    private String antwoord; // Het antwoord op de vraag
+
+    public Vraag(String vraag) {
+        super("vraag");
+        this.vraag = vraag;
+    }
+
+    public String getVraag() {
+        return vraag;
+    }
+
+    public String getAntwoord() {
+        return antwoord;
+    }
+
+    public void setAntwoord(String antwoord) {
+        this.antwoord = antwoord;
+    }
+}
+
+// Subklasse voor mutaties
+class Mutatie extends Melding {
+    private String woonplaats; // De nieuwe woonplaats
+    private Date ingangsdatum; // De ingangsdatum van de mutatie
+
+    public Mutatie(String woonplaats, Date ingangsdatum) {
+        super("mutatie");
+        this.woonplaats = woonplaats;
+        this.ingangsdatum = ingangsdatum;
+    }
+
+    public String getWoonplaats() {
+        return woonplaats;
+    }
+
+    public Date getIngangsdatum() {
+        return ingangsdatum;
+    }
+}
+
+// Klasse om klantgegevens te vertegenwoordigen
+class Klant {
+    public static int volgendKlantNummer = 1; // Statische variabele voor klantnummer
+    private int klantNummer;
+    private String voornaam;
+    private String achternaam;
+    private String geboortedatum;
+    private Melding melding; // Melding toegevoegd
+    private String gelogdGesprek;
+    private String woonplaats;
+
+    public Klant(int klantNummer, String voornaam, String achternaam, String geboortedatum, Melding melding, String gelogdGesprek, String woonplaats) {
+        this.klantNummer = klantNummer;
+        this.voornaam = voornaam;
+        this.achternaam = achternaam;
+        this.geboortedatum = geboortedatum;
+        this.melding = melding;
+        this.gelogdGesprek = gelogdGesprek;
+        this.woonplaats = woonplaats;
+        if (klantNummer >= volgendKlantNummer) {
+            volgendKlantNummer = klantNummer + 1;
+        }
+    }
+
+    // Methode om het volgende klantnummer op te halen
+    public static int getVolgendKlantNummer() {
+        return volgendKlantNummer;
+    }
+
+    // Getters voor klantgegevens
+    public int getKlantNummer() {
+        return klantNummer;
+    }
+
+    public String getVoornaam() {
+        return voornaam;
+    }
+
+    public String getAchternaam() {
+        return achternaam;
+    }
+
+    public String getGeboortedatum() {
+        return geboortedatum;
+    }
+
+    public Melding getMelding() {
+        return melding;
+    }
+
+    public String getGelogdGesprek() {
+        return gelogdGesprek;
+    }
+
+    public String getWoonplaats() {
+        return woonplaats;
+    }
+
+    // Setters voor klantgegevens
+    public void setVoornaam(String voornaam) {
+        this.voornaam = voornaam;
+    }
+
+    public void setAchternaam(String achternaam) {
+        this.achternaam = achternaam;
+    }
+
+    public void setGeboortedatum(String geboortedatum) {
+        this.geboortedatum = geboortedatum;
+    }
+
+    public void setMelding(Melding melding) {
+        this.melding = melding;
+    }
+
+    public void setGelogdGesprek(String gelogdGesprek) {
+        this.gelogdGesprek = gelogdGesprek;
+    }
+
+    public void setWoonplaats(String woonplaats) {
+        this.woonplaats = woonplaats;
+    }
+
+    @Override
+    public String toString() {
+        return "Klantnummer: " + klantNummer + "\n" +
+                "Naam: " + voornaam + " " + achternaam + "\n" +
+                "Geboortedatum: " + geboortedatum + "\n" +
+                "Melding: " + melding.getType() + "\n" +
+                "Gelogde gesprekken: " + gelogdGesprek + "\n" +
+                "Woonplaats: " + woonplaats;
+    }
+}
+
+// Klasse om beheer van klanten en hun gegevens te regelen
+class KlantBeheer {
+    private ArrayList<Klant> klanten;
+    private static final String KLANTEN_BESTAND = "klanten.txt";
+    private static final String GEBRUIKERSNAAM = "admin";
+    private static final String WACHTWOORD = "admin";
+
+    public KlantBeheer() {
+        this.klanten = new ArrayList<>();
+        loadKlanten();
+    }
+
+    // Methode om klanten vanuit een bestand te laden
+    public void loadKlanten() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(KLANTEN_BESTAND))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length >= 9) { // Controleer of er voldoende elementen zijn
+                    int klantNummer = Integer.parseInt(parts[0]);
+                    String voornaam = parts[1];
+                    String achternaam = parts[2];
+                    String geboortedatum = parts[3];
+                    String meldingType = parts[4];
+                    Melding melding = null;
+                    switch (meldingType.toLowerCase()) {
+                        case "klacht":
+                            double klachtErnst = Double.parseDouble(parts[5]);
+                            String klachtTekst = parts[6];
+                            melding = new Klacht(klachtErnst, klachtTekst);
+                            break;
+                        case "vraag":
+                            String vraagTekst = parts[5];
+                            String antwoord = parts[6];
+                            Vraag vraag = new Vraag(vraagTekst);
+                            vraag.setAntwoord(antwoord);
+                            melding = vraag;
+                            break;
+                        case "mutatie":
+                            String woonplaats = parts[5];
+                            // Parse ingangsdatum, ik laat dit voor nu als een String, je zou een SimpleDateFormat kunnen gebruiken om te parsen
+                            Date ingangsdatum = new Date(Long.parseLong(parts[6])); // Voorbeeld: Long.parseLong(parts[6]) voor een long timestamp
+                            melding = new Mutatie(woonplaats, ingangsdatum);
+                            break;
+                    }
+                    String gelogdGesprek = parts[7];
+                    String woonplaats = parts[8];
+                    klanten.add(new Klant(klantNummer, voornaam, achternaam, geboortedatum, melding, gelogdGesprek, woonplaats));
+                    Klant.volgendKlantNummer = klantNummer + 1;
+                } else {
+                    System.out.println("Ongeldige regel in klantenbestand: " + line);
+                }
+            }
+            System.out.println("Klanten geladen vanuit bestand.");
+        } catch (IOException e) {
+            System.out.println("Fout bij laden van klanten: " + e.getMessage());
+        }
+    }
+
+    // Methode om klantgegevens naar een bestand te schrijven
+    public void saveKlanten() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(KLANTEN_BESTAND))) {
+            for (Klant klant : klanten) {
+                writer.write(klant.getKlantNummer() + "," + klant.getVoornaam() + "," + klant.getAchternaam() + "," +
+                        klant.getGeboortedatum() + "," + klant.getMelding().getType());
+                if (klant.getMelding() instanceof Klacht) {
+                    Klacht klacht = (Klacht) klant.getMelding();
+                    writer.write("," + klacht.getErnst() + "," + klacht.getTekst());
+                } else if (klant.getMelding() instanceof Vraag) {
+                    Vraag vraag = (Vraag) klant.getMelding();
+                    writer.write("," + vraag.getVraag() + "," + vraag.getAntwoord());
+                } else if (klant.getMelding() instanceof Mutatie) {
+                    Mutatie mutatie = (Mutatie) klant.getMelding();
+                    writer.write("," + mutatie.getWoonplaats() + "," + mutatie.getIngangsdatum().getTime()); // Tijd in milliseconden
+                }
+                writer.write("," + klant.getGelogdGesprek() + "," + klant.getWoonplaats() + "\n");
+            }
+            System.out.println("Klanten opgeslagen naar bestand.");
+        } catch (IOException e) {
+            System.out.println("Fout bij opslaan van klanten: " + e.getMessage());
+        }
+    }
+
+    // Methode om een nieuwe klant toe te voegen
+    public void voegKlantToe(String voornaam, String achternaam, String geboortedatum, Melding melding, String gelogdGesprek, String woonplaats) {
+        Klant klant = new Klant(Klant.volgendKlantNummer++, voornaam, achternaam, geboortedatum, melding, gelogdGesprek, woonplaats);
+        klanten.add(klant);
+        System.out.println("Klant toegevoegd:\n" + klant);
+        saveKlanten();
+    }
+
+    // Methode om een klant te zoeken op basis van klantnummer
+    public Klant zoekKlant(int klantNummer) {
+        for (Klant klant : klanten) {
+            if (klant.getKlantNummer() == klantNummer) {
+                return klant;
+            }
+        }
+        return null;
+    }
+
+    // Methode om een klant te verwijderen op basis van klantnummer
+    public void verwijderKlant(int klantNummer) {
+        for (int i = 0; i < klanten.size(); i++) {
+            if (klanten.get(i).getKlantNummer() == klantNummer) {
+                klanten.remove(i);
+                System.out.println("Klant met klantnummer " + klantNummer + " is verwijderd.");
+                saveKlanten(); // Opslaan na verwijderen
+                return;
+            }
+        }
+        System.out.println("Klant met klantnummer " + klantNummer + " niet gevonden.");
+    }
+
+    // Methode om klantgegevens te wijzigen op basis van klantnummer
+    public void wijzigKlantGegevens(int klantNummer, String nieuweVoornaam, String nieuweAchternaam, String nieuweGeboortedatum, String nieuweGelogdGesprek, String nieuweWoonplaats) {
+        for (Klant klant : klanten) {
+            if (klant.getKlantNummer() == klantNummer) {
+                klant.setVoornaam(nieuweVoornaam);
+                klant.setAchternaam(nieuweAchternaam);
+                klant.setGeboortedatum(nieuweGeboortedatum);
+                klant.setGelogdGesprek(nieuweGelogdGesprek);
+                klant.setWoonplaats(nieuweWoonplaats);
+                System.out.println("Klantgegevens gewijzigd voor klant met klantnummer " + klantNummer + ".");
+                saveKlanten(); // Opslaan na wijzigen
+                return;
+            }
+        }
+        System.out.println("Klant met klantnummer " + klantNummer + " niet gevonden.");
+    }
+
+    // Methode om alle klanten weer te geven
+    public void toonAlleKlanten() {
+        if (klanten.isEmpty()) {
+            System.out.println("Geen klanten gevonden.");
+        } else {
+            System.out.println("Alle klanten:");
+            for (Klant klant : klanten) {
+                System.out.println(klant + "\n"); // Extra regel tussen elke klant
+            }
+        }
+    }
+
+    // Methode om in te loggen als administrator
+    public boolean login(String gebruikersnaam, String wachtwoord) {
+        return gebruikersnaam.equals(GEBRUIKERSNAAM) && wachtwoord.equals(WACHTWOORD);
+    }
+}
+
+public class Main {
+    private static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        KlantBeheer klantBeheer = new KlantBeheer();
+        boolean ingelogd = false;
+
+        // Inloggen als administrator
+        while (!ingelogd) {
+            System.out.print("Gebruikersnaam: ");
+            String gebruikersnaam = scanner.nextLine();
+            System.out.print("Wachtwoord: ");
+            String wachtwoord = scanner.nextLine();
+            ingelogd = klantBeheer.login(gebruikersnaam, wachtwoord);
+            if (!ingelogd) {
+                System.out.println("Ongeldige gebruikersnaam of wachtwoord. Probeer opnieuw.");
+            }
+        }
+
+        boolean doorgaan = true;
+        while (doorgaan) {
+            System.out.println("\n1. Klanten weergeven");
+            System.out.println("2. Klant toevoegen");
+            System.out.println("3. Klantgegevens wijzigen");
+            System.out.println("4. Klant verwijderen");
+            System.out.println("5. Mutatie uitvoeren");
+            System.out.println("6. Stoppen");
+            System.out.print("Keuze: ");
+            int keuze = scanner.nextInt();
+            scanner.nextLine(); // Leeg de scanner-buffer
+
+            switch (keuze) {
+                case 1:
+                    klantBeheer.toonAlleKlanten();
+                    break;
+                case 2:
+                    voegKlantToe(klantBeheer);
+                    break;
+                case 3:
+                    wijzigKlantGegevens(klantBeheer);
+                    break;
+                case 4:
+                    verwijderKlant(klantBeheer);
+                    break;
+                case 5:
+                    System.out.print("Voer het klantnummer in: ");
+                    int klantNummer = scanner.nextInt();
+                    scanner.nextLine(); // Clear buffer
+                    Klant klant = klantBeheer.zoekKlant(klantNummer);
+                    if (klant != null) {
+                        System.out.println("Klant gevonden:");
+                        System.out.println(klant);
+                        System.out.println("Wat is de nieuwe woonplaats?");
+                        String nieuweWoonplaats = scanner.nextLine();
+                        klant.setWoonplaats(nieuweWoonplaats);
+                        System.out.println("Mutatie uitgevoerd:");
+                        System.out.println(klant);
+                    } else {
+                        System.out.println("Klant niet gevonden.");
+                    }
+                    break;
+                case 6:
+                    doorgaan = false;
+                    klantBeheer.saveKlanten(); // Opslaan van klanten voordat het programma wordt afgesloten
+                    break;
+                default:
+                    System.out.println("Ongeldige keuze.");
+            }
+        }
+        scanner.close();
+    }
+
+    private static void voegKlantToe(KlantBeheer klantBeheer) {
+        System.out.println("\nNieuwe klant toevoegen:");
+
+        System.out.print("Voornaam: ");
+        String voornaam = scanner.nextLine();
+
+        System.out.print("Achternaam: ");
+        String achternaam = scanner.nextLine();
+
+        System.out.print("Geboortedatum (dd-mm-jjjj): ");
+        String geboortedatum = scanner.nextLine();
+
+        System.out.print("Wat voor melding is het? (klacht/vraag/mutatie): ");
+        String meldingType = scanner.nextLine();
+        Melding melding = null;
+
+        switch (meldingType.toLowerCase()) {
+            case "klacht":
+                System.out.print("Ernst van de klacht (0-10): ");
+                double ernst = scanner.nextDouble();
+                scanner.nextLine(); // Leeg de scanner-buffer
+                System.out.print("Klachttekst: ");
+                String klachtTekst = scanner.nextLine();
+                melding = new Klacht(ernst, klachtTekst);
+                break;
+            case "vraag":
+                System.out.print("Wat is uw vraag? ");
+                String vraagTekst = scanner.nextLine();
+                System.out.print("Wat is het antwoord? ");
+                String antwoord = scanner.nextLine();
+                melding = new Vraag(vraagTekst);
+                ((Vraag) melding).setAntwoord(antwoord);
+                break;
+            case "mutatie":
+                melding = new Mutatie("N/A", new Date());
+                break;
+            default:
+                System.out.println("Ongeldige meldingstype. Klant wordt toegevoegd zonder melding.");
+                break;
+        }
+
+        System.out.print("Gelogd gesprek: ");
+        String gelogdGesprek = scanner.nextLine();
+
+        System.out.print("Woonplaats: ");
+        String woonplaats = scanner.nextLine();
+
+        klantBeheer.voegKlantToe(voornaam, achternaam, geboortedatum, melding, gelogdGesprek, woonplaats);
+    }
+
+    private static void wijzigKlantGegevens(KlantBeheer klantBeheer) {
+        System.out.println("\nKlantgegevens wijzigen:");
+
+        System.out.print("Voer klantnummer in: ");
+        int klantNummer = scanner.nextInt();
+        scanner.nextLine(); // Leeg de scanner-buffer
+
+        System.out.print("Nieuwe voornaam: ");
+        String nieuweVoornaam = scanner.nextLine();
+
+        System.out.print("Nieuwe achternaam: ");
+        String nieuweAchternaam = scanner.nextLine();
+
+        System.out.print("Nieuwe geboortedatum (dd-mm-jjjj): ");
+        String nieuweGeboortedatum = scanner.nextLine();
+
+        System.out.print("Nieuw gelogd gesprek: ");
+        String nieuweGelogdGesprek = scanner.nextLine();
+
+        System.out.print("Nieuwe woonplaats: ");
+        String nieuweWoonplaats = scanner.nextLine();
+
+        klantBeheer.wijzigKlantGegevens(klantNummer, nieuweVoornaam, nieuweAchternaam, nieuweGeboortedatum, nieuweGelogdGesprek, nieuweWoonplaats);
+    }
+
+    private static void verwijderKlant(KlantBeheer klantBeheer) {
+        System.out.println("\nKlant verwijderen:");
+
+        System.out.print("Voer klantnummer in: ");
+        int klantNummer = scanner.nextInt();
+        scanner.nextLine(); // Leeg de scanner-buffer
+
+        klantBeheer.verwijderKlant(klantNummer);
+    }
+}
